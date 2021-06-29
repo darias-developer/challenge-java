@@ -20,6 +20,13 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * MetaWeatherExternal: clase que maneja la conexion con la api de MetaWeather
+ *
+ * @author  David Arias
+ * @version 1.0
+ * @since   2021-06-28
+ */
 @Service
 public class MetaWeatherExternal {
 
@@ -34,19 +41,35 @@ public class MetaWeatherExternal {
     @Value("${metaweather.temperatureinfo.url}")
     private String temperatureInfoUrl;
 
+    /**
+     * Este metodo obtiene la informacion de una ciudad
+     * @param cityName nombre de la ciudad
+     * @return retorna la informacion de una ciudad
+     */
     public CityInfoResponse getCityInfo(String cityName) throws ExternalException {
 
         log.info("init getWhereOnEarthId");
 
-        String endpoint = cityInfoUrl + cityName;
-
-        log.info("endpoint: " + endpoint);
-
         CityInfoResponse cityInfoResponse = null;
 
         try {
+
+            if (cityName == null || cityName.trim().equals("")) {
+                throw new ExternalException(
+                        messageSource.getMessage("city.info.cityName.empty", null, LocaleContextHolder.getLocale()));
+            }
+
+            String endpoint = cityInfoUrl + cityName;
+
+            log.info("endpoint: " + endpoint);
+
             Unirest.setTimeouts(0, 0);
             HttpResponse<String> response = Unirest.get(endpoint).asString();
+
+            if (response.getCode() != 200) {
+                throw new ExternalException(
+                        messageSource.getMessage("city.info.error", null, LocaleContextHolder.getLocale()));
+            }
 
             log.info("response: " + response.getBody());
 
@@ -69,7 +92,7 @@ public class MetaWeatherExternal {
         } catch (UnirestException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
             throw new ExternalException(
-                    messageSource.getMessage("city.info.error", new Object[]{endpoint}, LocaleContextHolder.getLocale()));
+                    messageSource.getMessage("city.info.error", null, LocaleContextHolder.getLocale()));
         }
 
         log.info("end getWhereOnEarthId");
@@ -77,19 +100,41 @@ public class MetaWeatherExternal {
         return cityInfoResponse;
     }
 
+    /**
+     * Este metodo obtiene la temperatura de una ciudad
+     * @param whereOnEarthId id de la ciudad en metaweather
+     * @param cityName nombre de la ciudad
+     * @return retorna la temperatura de una ciudad en centigrados
+     */
     public Double getTemperatureByCity(Integer whereOnEarthId, String cityName) throws ExternalException {
 
         log.info("init getTemperatureByCity");
 
-        String endpoint = temperatureInfoUrl + whereOnEarthId;
-
-        log.info("endpoint: " + endpoint);
-
         Double temperature = null;
 
         try {
+
+            if (cityName == null || cityName.trim().equals("")) {
+                throw new ExternalException(
+                        messageSource.getMessage("city.info.cityName.empty", null, LocaleContextHolder.getLocale()));
+            }
+
+            if (whereOnEarthId == null) {
+                throw new ExternalException(
+                        messageSource.getMessage("city.temperature.whereOnEarthId.empty", null, LocaleContextHolder.getLocale()));
+            }
+
+            String endpoint = temperatureInfoUrl + whereOnEarthId;
+
+            log.info("endpoint: " + endpoint);
+
             Unirest.setTimeouts(0, 0);
             HttpResponse<String> response = Unirest.get(endpoint).asString();
+
+            if (response.getCode() != 200) {
+                throw new ExternalException(
+                        messageSource.getMessage("city.temperature.error", null, LocaleContextHolder.getLocale()));
+            }
 
             log.info("response: " + response.getBody());
 
@@ -116,7 +161,7 @@ public class MetaWeatherExternal {
         } catch (UnirestException | JsonProcessingException e) {
             log.error(e.getMessage(), e);
             throw new ExternalException(
-                    messageSource.getMessage("city.temperature.error", new Object[]{endpoint}, LocaleContextHolder.getLocale()));
+                    messageSource.getMessage("city.temperature.error", null, LocaleContextHolder.getLocale()));
         }
 
         log.info("end getTemperatureByCity");
